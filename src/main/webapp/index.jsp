@@ -20,7 +20,7 @@
 <link rel='StyleSheet' href='https://wambachers-osm.website/common/js/leaflet/plugins/leaflet-messagebox/leaflet-messagebox.css'/>
 <link rel="StyleSheet" href='https://wambachers-osm.website/common/js/leaflet/plugins/Leaflet.Dialog/Leaflet.Dialog.css'/>
 
-<link rel='StyleSheet' href='https://wambachers-osm.website/common/css/map001.css'/>
+<link rel='StyleSheet' href='css/map001.css'/>
 
 <!--[if IE 6]>
    <link href="https://wambachers-osm.website/common/css/ie6.css" rel="stylesheet" type="text/css" />

@@ -3,10 +3,11 @@
 <head>
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
 <!--meta http-equiv="Pragma" content="no-cache"--> 
-<title>OSM NoFarm 1.1</title>
+<title>OSM NoFarm 1.2</title>
 <!-- 
     V 1.0 abgeleitet aus emergency/19 
     V 1.1 css/js von common-server
+    V 1.2 active zoom levels anzeigen
 
 -->
 <base target="_top" />
@@ -19,16 +20,16 @@
 <link rel='StyleSheet' href='https://wambachers-osm.website/common/js/leaflet/plugins/leaflet-messagebox/leaflet-messagebox.css'/>
 <link rel="StyleSheet" href='https://wambachers-osm.website/common/js/leaflet/plugins/Leaflet.Dialog/Leaflet.Dialog.css'/>
 
-<link rel='StyleSheet' href='css/map001.css'/>
+<link rel='StyleSheet' href='https://wambachers-osm.website/common/css/map001.css'/>
 
 <!--[if IE 6]>
-   <link href="css/ie6.css" rel="stylesheet" type="text/css" />
+   <link href="https://wambachers-osm.website/common/css/ie6.css" rel="stylesheet" type="text/css" />
 <![endif]-->
 
 <script>
    var myBase       = "nofarm";
    var myVersion    = "1";
-   var mySubversion = "1"; 
+   var mySubversion = "2"; 
    var FEATURE_COUNT = 5;   
    var myName       = myBase+"-"+myVersion+"."+mySubversion;
    var database     = "planet3";
@@ -159,6 +160,8 @@
          transparent: true,
          buffer: 20,
          timeout: 300,
+         heigth: 256,
+         width: 256,
          exceptions: "application/vnd.ogc.se_inimage",
          maxZoom: 19,
          minZoom: 11
@@ -245,7 +248,7 @@
          center:		center,    // wambach                  
          zoom:			zoom,
          minZoom:		6,
-         maxZoom:		19,
+         maxZoom:		18,
          layers:		initLayer,
          loadingControl:	true,
          editInOSMControlOptions: {
@@ -273,7 +276,20 @@
          var idx = getIdxByName(Overlays, e.name);
          console.log("removing",Overlays[idx].layer);
          Overlays[idx].active = false;
-      });   
+      }); 
+      
+      map.on('zoomend', function(e) {
+         var zoom = map.getZoom();
+         console.log("zoom changed to",zoom);
+         if (zoom >= global_options.minZoom) {
+            console.log("do nofarm");
+            $(".leaflet-control-zoom-display").css("background-color", "#62ef2b"); 
+         }
+         else {
+            console.log("don't nofarm");
+            $(".leaflet-control-zoom-display").css("background-color", "#FFFFFF"); 
+         }
+      });
 
       var layerControl = L.control.selectLayers(baseLayers, overlayLayers);
 
@@ -304,29 +320,33 @@
       };
       
       var dialogOptions = {
-         "size":    [180,70],
-         "maxSize": [180,70],
-         "anchor":  [2,50]
+         "size":    [320,80],
+         "maxSize": [320,80],
+         "anchor":  [2,40]
       };
       
       var dialog = L.control.dialog(dialogOptions)
                     .setContent("<p style='font-size:200%; margin:0; text-align:center;'>NoFarm"+myVersion+"."+mySubversion+"</p>"+
-                                "<div id='lag'></div>")
+                                "<div id='lag'></div>" +
+                                "<div id='count'></div>")
                     .addTo(map);
-      
-//    var options = { position: "bottomright", timeout: 5000 }
-//    var box = L.control.messagebox(options).addTo(map);
       
       map.addControl(new L.Control.Permalink({text: 'Permalink', layers: layerControl, position: 'bottomright'}));
       
+      console.log("Firing zoomend");
+      map.fireEvent("zoomend");
+      
       map.addEventListener("click", onMapClick);
       
-      setInterval(getAction,600000); 
+      setInterval(getAction,60*10*1000);  // 10 min 
       getAction(); 
       
       getOsmReplicationLag();
-      setInterval(getOsmReplicationLag,60000);  
-      setInterval(LagAnzeigen,1000);  
+      setInterval(getOsmReplicationLag,60*1000); // 1 min  
+      setInterval(LagAnzeigen,1000); 
+      
+      getOsmLanduseCount();
+      setInterval(getOsmLanduseCount, 60*60*1000); // 1h
 
 // ********************************************************************************************
 // ************************** START Functions *************************************************
@@ -338,15 +358,12 @@
       if (args instanceof L.Map) {
         center = args.getCenter();
         zoom = args.getZoom();
-//      layers = args.getLayersCode();
       } else {
         center = args.center || L.latLng(args.lat, args.lon);
         zoom = args.zoom;
-//      layers = args.layers || "";
       }
 
       center = center.wrap();
-//    layers = layers.replace("M", "");
 
       var precision = 5;
   
@@ -357,7 +374,7 @@
       return hash;
   }
   
-// ********************************************************************************** //
+// ----------------------------------------------------------------------------------------
 
       function storageAvailable(type) {
          try {
@@ -372,6 +389,8 @@
              return false;
          }
       }
+      
+// ----------------------------------------------------------------------------------------
 
       function saveLocalStorage() {
          
@@ -570,12 +589,12 @@
          return query;
       }  
    
-// ****************************************************************************** //
+// ----------------------------------------------------------------------------------------
 
       function getAction() {
          $.ajax({
                  type:      "POST",
-                 timeout:   30000,
+                 timeout:   5000,
                  url:       "getAction5", 
                  data: {
                       caller:   myName,
@@ -670,7 +689,56 @@
                });
       }
       
-      /* display lag */
+// ----------------------------------------------------------------------------------------
+
+      function ReloadPage() {
+         console.log("ReloadPage(): loading="+loading);
+         window.location.reload(true); // ohne cache
+      } 
+      
+// ----------------------------------------------------------------------------------------
+
+      function getOsmLanduseCount() {
+         $.ajax({
+                 type:      "POST",
+                 timeout:   30000,
+                 url:       "getOsmLanduseCount", 
+                 data: {
+                      caller:   myName,
+                      base:     myBase,
+                      debug:    1,
+                      database: database
+                 },
+                 async:     true,
+                 dataType:  "json",
+                 success: function(action, status) { 
+                             console.log(action, status);
+                             $("#count").html("<p style='margin:0; text-align:center'>"
+                                +"farm:&nbsp;"+addCommas(action.farm)
+                                +"&nbsp;farmland:&nbsp;"+addCommas(action.farmland)
+                                +"&nbsp;farmyard:&nbsp;"+addCommas(action.farmyard)
+                                +"</p>");
+                          },
+                 error: function(XMLHttpRequest, textStatus, errorThrown) {
+                     console.log("getAction: An error has occurred making the request: " + errorThrown);
+                 }   
+               });
+      } 
+      
+// ---------------------------------------------------------------------------
+
+      function addCommas(nStr) {
+	     nStr += '';
+	     x = nStr.split('.');
+	     x1 = x[0];
+	     x2 = x.length > 1 ? '.' + x[1] : '';
+	     var rgx = /(\d+)(\d{3})/;
+	     while (rgx.test(x1)) {
+		    x1 = x1.replace(rgx, '$1' + ',' + '$2');
+	     }
+	     return x1 + x2;
+      }
+// **************************** display lag **********************************
 
       var vlag;
 
@@ -693,13 +761,15 @@
          vlag = vlag + 1;
       }
 
+// ----------------------------------------------------------------------------------------
+
       function getOsmReplicationLag() {
          vlag = -1;
 //       console.log("getOsmReplicationLag: ",myName, database, "p3run", 2);
          $.ajax({
                  type:      "POST",
                  async:     false,
-                 timeout:   30000,
+                 timeout:   5000,
                  url:       "getOsmReplicationLag3",
                  data: {
                       caller:   myName,

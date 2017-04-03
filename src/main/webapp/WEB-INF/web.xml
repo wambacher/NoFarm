@@ -5,14 +5,14 @@
 <web-app>
     <display-name>Meine Web-Anwendung ;)</display-name>
 
-    <servlet>
+    <!--servlet>
         <servlet-name>getOsmReplicationLag</servlet-name>
         <servlet-class>com.wno.getOsmReplicationLag</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>getOsmReplicationLag</servlet-name>
         <url-pattern>/getOsmReplicationLag</url-pattern>
-    </servlet-mapping>
+    </servlet-mapping-->
     
     <servlet>
         <servlet-name>getOsmReplicationLag3</servlet-name>
@@ -23,14 +23,15 @@
         <url-pattern>/getOsmReplicationLag3</url-pattern>
         
     </servlet-mapping>
-        <servlet>
+        
+    <!--servlet>
         <servlet-name>getAction</servlet-name>
         <servlet-class>com.wno.getAction</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>getAction</servlet-name>
         <url-pattern>/getAction</url-pattern>
-    </servlet-mapping>
+    </servlet-mapping-->
     
     <servlet>
         <servlet-name>getAction5</servlet-name>
@@ -41,4 +42,13 @@
         <url-pattern>/getAction5</url-pattern>
     </servlet-mapping>
     
+    
+    <servlet>
+        <servlet-name>getOsmLanduseCount</servlet-name>
+        <servlet-class>com.wno.getOsmLanduseCount</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>getOsmLanduseCount</servlet-name>
+        <url-pattern>/getOsmLanduseCount</url-pattern>
+    </servlet-mapping>
 </web-app>

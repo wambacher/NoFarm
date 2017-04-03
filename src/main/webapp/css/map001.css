@@ -29,4 +29,7 @@
   line-height: 16px;
   color: #666;
 }
-	
+
+.leaflet-control-zoom-display {
+   background-color: #FFFFFF;
+}

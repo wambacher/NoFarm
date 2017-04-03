@@ -5,15 +5,6 @@
 <web-app>
     <display-name>Meine Web-Anwendung ;)</display-name>
 
-    <!--servlet>
-        <servlet-name>getOsmReplicationLag</servlet-name>
-        <servlet-class>com.wno.getOsmReplicationLag</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>getOsmReplicationLag</servlet-name>
-        <url-pattern>/getOsmReplicationLag</url-pattern>
-    </servlet-mapping-->
-    
     <servlet>
         <servlet-name>getOsmReplicationLag3</servlet-name>
         <servlet-class>com.wno.getOsmReplicationLag3</servlet-class>
@@ -24,15 +15,6 @@
         
     </servlet-mapping>
         
-    <!--servlet>
-        <servlet-name>getAction</servlet-name>
-        <servlet-class>com.wno.getAction</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>getAction</servlet-name>
-        <url-pattern>/getAction</url-pattern>
-    </servlet-mapping-->
-    
     <servlet>
         <servlet-name>getAction5</servlet-name>
         <servlet-class>com.wno.getAction5</servlet-class>

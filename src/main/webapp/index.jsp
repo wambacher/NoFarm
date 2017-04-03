@@ -3,11 +3,12 @@
 <head>
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
 <!--meta http-equiv="Pragma" content="no-cache"--> 
-<title>OSM NoFarm 1.2</title>
+<title>OSM NoFarm 1.3</title>
 <!-- 
     V 1.0 abgeleitet aus emergency/19 
     V 1.1 css/js von common-server
     V 1.2 active zoom levels anzeigen
+    V 1.3 fix zoom display
 
 -->
 <base target="_top" />
@@ -29,7 +30,7 @@
 <script>
    var myBase       = "nofarm";
    var myVersion    = "1";
-   var mySubversion = "2"; 
+   var mySubversion = "3"; 
    var FEATURE_COUNT = 5;   
    var myName       = myBase+"-"+myVersion+"."+mySubversion;
    var database     = "planet3";
@@ -277,19 +278,6 @@
          console.log("removing",Overlays[idx].layer);
          Overlays[idx].active = false;
       }); 
-      
-      map.on('zoomend', function(e) {
-         var zoom = map.getZoom();
-         console.log("zoom changed to",zoom);
-         if (zoom >= global_options.minZoom) {
-            console.log("do nofarm");
-            $(".leaflet-control-zoom-display").css("background-color", "#62ef2b"); 
-         }
-         else {
-            console.log("don't nofarm");
-            $(".leaflet-control-zoom-display").css("background-color", "#FFFFFF"); 
-         }
-      });
 
       var layerControl = L.control.selectLayers(baseLayers, overlayLayers);
 
@@ -319,17 +307,31 @@
          "closeButton":	true
       };
       
-      var dialogOptions = {
-         "size":    [320,80],
-         "maxSize": [320,80],
-         "anchor":  [2,40]
-      };
-      
-      var dialog = L.control.dialog(dialogOptions)
-                    .setContent("<p style='font-size:200%; margin:0; text-align:center;'>NoFarm"+myVersion+"."+mySubversion+"</p>"+
+      var dialog = L.control.dialog({
+                   "size":    [320, 80],
+                   "minSize": [320, 80],
+                   "maxSize": [320,105],
+                    "anchor": [  2, 40]
+                  }).setContent("<p style='font-size:200%; margin:0; text-align:center;'>NoFarm"+myVersion+"."+mySubversion+"</p>"+
                                 "<div id='lag'></div>" +
-                                "<div id='count'></div>")
+                                "<div id='count'></div>" +
+                                "<div id='zoomin' hidden=true><p style='font-size:150%;margin:0;text-align:center;color:#ff0000;'>Zoom in (to load data)</p></div>")
                     .addTo(map);
+                           
+      map.on('zoomend', function(e) {
+         var zoom = map.getZoom();
+         console.log("zoom changed to",zoom);
+         if (zoom >= global_options.minZoom) {
+            console.log("do nofarm");
+            dialog.setSize([320, 80]);
+            $('#zoomin').hide(); 
+         }
+         else {
+            console.log("don't nofarm");
+            dialog.setSize([320,105]);
+            $('#zoomin').show(); 
+         }
+      });
       
       map.addControl(new L.Control.Permalink({text: 'Permalink', layers: layerControl, position: 'bottomright'}));
       

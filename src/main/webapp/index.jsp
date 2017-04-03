@@ -3,8 +3,10 @@
 <head>
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
 <!--meta http-equiv="Pragma" content="no-cache"--> 
-<title>OSM NoFarm 1.0</title>
-<!-- V 1.0 abgeleitet aus emergency/19 
+<title>OSM NoFarm 1.1</title>
+<!-- 
+    V 1.0 abgeleitet aus emergency/19 
+    V 1.1 css/js von common-server
 
 -->
 <base target="_top" />
@@ -26,13 +28,14 @@
 <script>
    var myBase       = "nofarm";
    var myVersion    = "1";
-   var mySubversion = "0"; 
+   var mySubversion = "1"; 
    var FEATURE_COUNT = 5;   
    var myName       = myBase+"-"+myVersion+"."+mySubversion;
    var database     = "planet3";
    var loading      = 0;
    var host         = window.location.hostname;
-
+   var protocol     = window.location.protocol;
+   
    if (typeof console === "undefined" || typeof console.log === "undefined") {
      console = {};
      console.log = function() {};
@@ -47,7 +50,7 @@
 <script src='https://wambachers-osm.website/common/js/leaflet/L.Control.ActiveLayers.js'></script>
 <script src='https://wambachers-osm.website/common/js/leaflet/L.Control.SelectLayers.js'></script>
 <script src='https://wambachers-osm.website/common/js/leaflet/L.Control.Loading.js'></script>
-<script src='https://wambachers-osm.website/common/js/leaflet/Leaflet.EditInOSM.js'></script>
+<script src='https://wambachers-osm.website/common/js/leaflet/Leaflet.EditInOSM2.js'></script>
 <script src='https://wambachers-osm.website/common/js/leaflet/plugins/leaflet-messagebox/leaflet-messagebox.js'></script>
 <script src='https://wambachers-osm.website/common/js/leaflet/plugins/Leaflet.Dialog/Leaflet.Dialog.js'></script>
 <script src='https://code.jquery.com/jquery-2.1.0.min.js'></script>
@@ -156,11 +159,9 @@
          transparent: true,
          buffer: 20,
          timeout: 300,
-         heigth: 512,
-         width: 512,
          exceptions: "application/vnd.ogc.se_inimage",
          maxZoom: 19,
-         minZoom: 12
+         minZoom: 11
       };
 
        var defaultParameters = {   // not used here!!!
@@ -274,11 +275,9 @@
          Overlays[idx].active = false;
       });   
 
-      console.log("vor layerControl");
       var layerControl = L.control.selectLayers(baseLayers, overlayLayers);
-      console.log("nach LayerControl");
+
       layerControl.addTo(map);
-      console.log("added");
 
       ActivateOverlays();
 
@@ -311,15 +310,19 @@
       };
       
       var dialog = L.control.dialog(dialogOptions)
-                    .setContent("<h1>NoFarm "+myVersion+"."+mySubversion+"</h1>")
+                    .setContent("<p style='font-size:200%; margin:0; text-align:center;'>NoFarm"+myVersion+"."+mySubversion+"</p>"+
+                                "<div id='lag'></div>")
                     .addTo(map);
       
-      var options = { position: "bottomright", timeout: 5000 }
-      var box = L.control.messagebox(options).addTo(map);
+//    var options = { position: "bottomright", timeout: 5000 }
+//    var box = L.control.messagebox(options).addTo(map);
       
       map.addControl(new L.Control.Permalink({text: 'Permalink', layers: layerControl, position: 'bottomright'}));
       
       map.addEventListener("click", onMapClick);
+      
+      setInterval(getAction,600000); 
+      getAction(); 
       
       getOsmReplicationLag();
       setInterval(getOsmReplicationLag,60000);  
@@ -527,19 +530,26 @@
                   case "query":
                   case "osm_user":
                      break;
-                  case "id":
-                     josm = "<a href='http://127.0.0.1:8111/load_object?new_layer=false&objects=n"+value
-//                           +  "' target='hiddenIframe"
-                             + "'>"+value+"</a>";
-                     console.log(josm);
-                     content += "   <tr><td>josm:</td><td>"+josm+"</td></tr>";
-                     break;
                   default:
                      content += "   <tr><td>"+key+"</td><td>"+value+"</td></tr>";
                      break;
                }
          });
 	     content += "</table>";
+	     var osm_id = feature.properties.osm_id;
+	     if (protocol=="http:") {
+	        josm = "<a href='http://127.0.0.1:8111";
+	     }
+	     else {
+	        josm = "<a href='https://127.0.0.1:8112";
+         }
+	   
+         josm += "/load_object?new_layer=false&objects="+osm_id
+               + "' target='hiddenIframe'>"+osm_id+"</a>";
+         console.log(josm);
+         content += "<br>Edit with josm:&nbsp;"+josm;
+         
+
          return content; 
       }
 // ----------------------------------------------------------------------------------------
@@ -562,6 +572,104 @@
    
 // ****************************************************************************** //
 
+      function getAction() {
+         $.ajax({
+                 type:      "POST",
+                 timeout:   30000,
+                 url:       "getAction5", 
+                 data: {
+                      caller:   myName,
+                      base:     myBase,
+                      debug:    1,
+                      database: database
+                 },
+                 async:     false,
+                 dataType:  "text",
+                 success: function(action, status) { 
+                    console.log("getAction -->",action,status);
+                    var ac = action.split(":"); 
+                    switch(ac[0]) {
+                       case "reload":
+                          console.log("getAction: got order to reload page");
+                          console.log("pathname = "+window.location.pathname); // Returns path only
+                          console.log("url      = "+window.location.href);     // Returns full URL
+                          ReloadPage();
+                          break;
+                       case "unread":
+                          if (! ignoreMyMails) {
+                             console.log("start noty");
+                             var n = noty({text:        "You got "+ac[1]+" unread mails in your "
+                                                      +     "<a href='http://openstreetmap.org/user/"+ac[2]
+                                                      +     "/inbox' target='_blank'>OSM-Mailbox</a> "
+                                                      +         "Click link to open mailbox.",
+                                           buttons: [
+//                             /*            {addClass: 'btn btn-primary', 
+//                                             text:        '   Read Mail', 
+//                                             onClick:     function($noty) {
+//                                                 $noty.close();
+//                                                                 ignoreMyMails = true;
+//                                          }
+//                                    }, */
+                                      {addClass:    'btn btn-primary', 
+                                               text:        'Ignore in current session', 
+                                               onClick:     function($noty) {
+                                                               $noty.close();
+                                                               ignoreMyMails = true;
+                                                            }
+                                      },
+                                      {addClass:    'btn btn-danger',
+                                               text:     'Close', 
+                                            onClick:     function($noty) {
+                                                            $noty.close();
+                                                         }
+                                       }
+                                       ],
+                                           layout:      "center",         
+                                           type:        "success",
+                                           theme:       "defaultTheme",
+                                           timeout:     30000,
+                                           killer:      true,
+                                           dismissQueue:    false
+                                          }
+                                         );
+                          }
+                          break;
+                       case "msg":
+                          if (!ignoreMsg) {
+                             var n = noty({text:        ac[1],
+                                           buttons: [
+                              {addClass:    'btn btn-primary',
+                           text:        'Ignore in current session', 
+                                               onClick:     function($noty) {
+                                           $noty.close();
+                                                                   ignoreMsg = true;
+                                }
+                          },
+                                      {addClass:    'btn btn-primary', 
+                                               text:        '   Close', 
+                                               onClick:     function($noty) {
+                                   $noty.close();
+                                            }
+                                      }
+                                       ],
+                                           layout:      "center",         
+                                           type:        "success",
+                                           theme:       "defaultTheme",
+                                           timeout:         30000,
+                                           killer:      true,
+                                           dismissQueue:    false
+                                       }
+                                    );
+                          }
+                          break;
+                    }
+                 },
+                 error: function(XMLHttpRequest, textStatus, errorThrown) {
+                     console.log("getAction: An error has occurred making the request: " + errorThrown);
+                 }   
+               });
+      }
+      
       /* display lag */
 
       var vlag;
@@ -579,27 +687,30 @@
 //         innerHtml =  "<a href=\"ReplicationLag.png\">lag: "+ anzStunden + ":" + anzMinuten + ":" + anzSekunden+"</a>";
 //         console.log("innerHtml=",innerHtml);
 //         document.getElementById("lag_div").innerHTML = innerHtml;
-         box.show(lagText);
+//       box.show(lagText);
+//       console.log("dialog lag:", $("#lag").html());
+         $("#lag").html("<p style='margin:0; text-align:center'>"+lagText+"</p>");
          vlag = vlag + 1;
       }
 
       function getOsmReplicationLag() {
          vlag = -1;
-         console.log("getOsmReplicationLag: ",myName, database, "p3run", 2);
+//       console.log("getOsmReplicationLag: ",myName, database, "p3run", 2);
          $.ajax({
-                 type:      "GET",
+                 type:      "POST",
                  async:     false,
                  timeout:   30000,
-                 url:       "getOsmReplicationLag",
+                 url:       "getOsmReplicationLag3",
                  data: {
-                      caller:   myBase,
+                      caller:   myName,
+                      base:     myBase,
                       database: database,
                       diff:     "p3run",
-                      debug:    2
+                      debug:    0
                        },
                  dataType:  "text",
                  success:   function(text,status) {
-                               console.log(text,status);
+//                             console.log(text,status);
                                vlag = parseInt(text);
                             },
                  error: function(XMLHttpRequest, textStatus, errorThrown) {

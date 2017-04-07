@@ -69,7 +69,7 @@
          margin:0px;
       } 
 
-#     .leaflet-tile { border: solid blue 1px; }
+#   .leaflet-tile { border: solid blue 1px; }
 
    </style>
 
@@ -335,7 +335,6 @@
       
       map.addControl(new L.Control.Permalink({text: 'Permalink', layers: layerControl, position: 'bottomright'}));
       
-      console.log("Firing zoomend");
       map.fireEvent("zoomend");
       
       map.addEventListener("click", onMapClick);

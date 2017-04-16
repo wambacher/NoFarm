@@ -18,11 +18,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 
 /* Version 1 Abgeleitet von Todo.java
+   Version 2 Collect image data
 */
 
 public class getOsmLanduseCount extends HttpServlet {
 
-   private String myName = "getOsmLanduseCount";
+   private String myName = "getOsmLanduseCount 2.0";
    private String myLog;
    
    private static <T> T coalesce(T ...items) {
@@ -75,8 +76,12 @@ public class getOsmLanduseCount extends HttpServlet {
       JsonGenerator jsonGenerator = jsonfactory.createJsonGenerator(writer);           
 //    jsonGenerator.useDefaultPrettyPrinter();
 
+      int farm = 0;
+      int farmland = 0;
+      int farmyard = 0;
+
       try {
-         conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/" + database,"osm", "");
+         conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/" + database,"postgres", "");
 
          Statement statement = conn.createStatement();
 
@@ -97,8 +102,27 @@ public class getOsmLanduseCount extends HttpServlet {
             int count   = rs.getInt("count");
             
             jsonGenerator.writeNumberField(landuse,count);
+            
+            switch(landuse) {
+               case "farm":
+                  farm = count;
+                  break;
+               case "farmland":
+                  farmland = count;
+                  break;
+               case "farmyard": 
+                  farmyard = count;
+                  break;
+               default:
+            }  
          }
          jsonGenerator.writeEndObject();
+         
+         //       add to database
+         String query2 = "insert into nofarm(dtm, farm, farmland,farmyard)"
+                       + "            values(now(), "+farm+", "+farmland+", "+farmyard+");";
+         if (debug > 1) SimpleLog.write(myLog,myHeader+query2);
+         int x = statement.executeUpdate(query2);
       } 
       catch (SQLException se) {
          SimpleLog.write(myLog,myHeader+se.getMessage());
@@ -114,9 +138,9 @@ public class getOsmLanduseCount extends HttpServlet {
             SimpleLog.write(myLog,myHeader+e.toString());
          }
       }   
-                
+
+      jsonGenerator.close();                
       jsonGenerator.flush();
-      jsonGenerator.close();
       
       String jsonString = writer.toString();
       if (debug > 0) SimpleLog.write("returning "+jsonString);

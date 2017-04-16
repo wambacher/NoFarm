@@ -3,12 +3,13 @@
 <head>
 <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
 <!--meta http-equiv="Pragma" content="no-cache"--> 
-<title>OSM NoFarm 1.3</title>
+<title>OSM NoFarm 1.4</title>
 <!-- 
     V 1.0 abgeleitet aus emergency/19 
     V 1.1 css/js von common-server
     V 1.2 active zoom levels anzeigen
     V 1.3 fix zoom display
+    V 1.4 collect data for graphics
 
 -->
 <base target="_top" />
@@ -30,7 +31,7 @@
 <script>
    var myBase       = "nofarm";
    var myVersion    = "1";
-   var mySubversion = "3"; 
+   var mySubversion = "4"; 
    var FEATURE_COUNT = 5;   
    var myName       = myBase+"-"+myVersion+"."+mySubversion;
    var database     = "planet3";
@@ -707,7 +708,7 @@
                  data: {
                       caller:   myName,
                       base:     myBase,
-                      debug:    1,
+                      debug:    2,
                       database: database
                  },
                  async:     true,
